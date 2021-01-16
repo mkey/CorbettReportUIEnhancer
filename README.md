@@ -9,7 +9,9 @@ If you already have a usersrcipt browser addon installed, skip to step 3:
 
 ![images/tampermonkey-menu.png](images/tampermonkey-menu.png)
 
-3. Install the script from [here](https://github.com/mkey/CorbettReportUIEnhancer/raw/main/script/CR-UI-Enhancer.user.js).
+3. Install the script from [here](https://github.com/mkey/CorbettReportUIEnhancer/raw/main/script/CR-UI-Enhancer.user.js). You will see something similar to below, click the `Install` or `Reinstall` button.
+
+![images/tampermonkey-install.png](images/tampermonkey-install.png)
 
 4. Once the script is installed, proceed to [corbettreport.com](https://www.corbettreport.com/), login into the site and then go to your profile page (on the top right, where it states `Howdy, [username]` or simply click [here](https://www.corbettreport.com/wp-admin/profile.php).
 
