@@ -15,7 +15,6 @@ If you already have a usersrcipt browser addon installed, skip to step 3:
 
 5. On the bottom of the profile settings, you will see a new section that can be used to configure the [CorbettReport UI Enhancer Script]().
 
-![images/tampermonkey-menu.png](images/tampermonkey-menu.png)
 ![images/cr-ui-settings.png](images/cr-ui-settings.png)
 
 ##### There are 5 settings:
