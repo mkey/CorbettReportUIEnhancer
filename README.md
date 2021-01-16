@@ -29,6 +29,7 @@ If you already have a userscript browser addon installed, skip to step 3:
 ##### There are 5 settings:
 - `Alter the comment sort order` - true or false, allows you to completely turn off the comment sort order functionality.
 - `Default comment sort order` - works in conjunction with above, if `Alter the comment sort order` is turned on, then this setting will allow to choose the **default** comment sort order.
+- `Default subscription setting` - The email subscription setting default.
 - `Auto backup comments` - just a placeholder for the time being, work in progress
 - `Use the rich text editor` - true or false, allow the use of the inbuilt rich text editor that replaces the basic text input box
 
