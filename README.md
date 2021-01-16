@@ -1,6 +1,13 @@
-#### CorbettReport UI Enhancer Script
+### CorbettReport UI Enhancer Script
 
 This user script is written to help enhance the user's experience on the site [corbettreport.com](https://www.corbettreport.com/). Follow these simple steps to install and learn how to configure and use the script.
+
+#### Credits
+
+- Quill rich text editor used under the hood [quilljs.com](https://quilljs.com/)
+- [James Corbett](https://infogalactic.com/info/James_Corbett_(journalist)) for [corbettreport.com](https://www.corbettreport.com/).
+
+#### How to install
 
 If you already have a userscript browser addon installed, skip to step 3:
 
