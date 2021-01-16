@@ -2,7 +2,7 @@
 
 This user script is written to help enhance the user's experience on the site [corbettreport.com](https://www.corbettreport.com/). Follow these simple steps to install and learn how to configure and use the script.
 
-If you already have a usersrcipt browser addon installed, skip to step 3:
+If you already have a userscript browser addon installed, skip to step 3:
 
 1. Install the `Tampermonkey` browser extension  - [Chrome](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en) - [Firefox](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/) (you will be prompted by the browser to confirm the installation, confirm when ready).
 2. Familiarize yourself with this addon's simple menu by clicking the addon icon (by default on the top right of the browser window).
