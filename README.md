@@ -52,6 +52,8 @@ If you already have a usersrcipt browser addon installed, skip to step 3:
 - `URL` - a URL input box (for the time being, it's a bit inconveniently placed)
 - `T` - clears all text formatting
 
+And added benefit is that the character counter (bottom left) is now working and is counting characters used. Once this count dries up, the counter will turn red and while you won't be prevented from submitting, your comment will probably be sent to the moderation que and snipped.
+
 **Note** - when you paste text from an outside source, this box will by default accept all rich text formatting from the source (including URLs etc.) while the comment text will be sanitized during submission and all unsupported formatting will be stripped. To paste just **plain text** and strip formatting, use CTRL+SHIFT+V on your keyboard. For example, by pressing CTRL+V I get this:
 
 ![images/cr-ui-rich-text-2.png](images/cr-ui-rich-text-2.png)
