@@ -91,7 +91,7 @@ Here are the two new layouts combined. This would also be the recommended way to
 
 10. **NEW IN V0.2** a new feature is the *unread* comments button. By pressing the `Next` button, the page will magically scroll to the least *read* comment. The script does not, of course, know what one has read, but it just keeps ***track*** (as per disclaimer above) of the last comment that was loaded when an article has been accessed. By reloading the page, the script will rightly assume every comment has been read and will mark them as such.
 
-![images/cr-ui-rich-text-2.png](images/cr-ui-toolbar-v0.2.png.png)
+![images/cr-ui-rich-text-2.png](images/cr-ui-toolbar-v0.2.png)
 
 **Note** - comment sort order buttons have now been moved to the toolbar on the top of the page.
 
