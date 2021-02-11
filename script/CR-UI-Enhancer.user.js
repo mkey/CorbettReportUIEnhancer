@@ -1,9 +1,13 @@
 // ==UserScript==
 // @name         CR UI Enhancer
-// @namespace    https://gist.github.com/mkey/5a2872b0792e1e412540e9cdee2ed1bd
-// @version      0.1
-// @description  CorbettReport User interface enghancer script. Visit https://gist.github.com/mkey/5a2872b0792e1e412540e9cdee2ed1bd for details.
+// @namespace    https://github.com/mkey/CorbettReportUIEnhancer/
+// @version      0.2
+// @description  CorbettReport User interface enghancer script. Visit https://github.com/mkey/CorbettReportUIEnhancer/ for details.
 // @author       mkey
+// @homepage     https://github.com/mkey/
+// @updateURL    https://github.com/mkey/CorbettReportUIEnhancer/raw/main/script/CR-UI-Enhancer.user.js
+// @downloadURL  https://github.com/mkey/CorbettReportUIEnhancer/raw/main/script/CR-UI-Enhancer.user.js
+// @match        https://www.corbettreport.com
 // @match        https://www.corbettreport.com/*
 // @match        https://www.corbettreport.com/wp-admin/profile.php
 // @resource     QUILLCSS https://cdn.quilljs.com/1.3.6/quill.snow.css
@@ -17,145 +21,33 @@
 // ==/UserScript==
 
 (function()
- {
+{
     'use strict';
     //
-    class settingsClass {
-        constructor() {
-            this.settings = {
-                commentsSortOrder: true,
-                commentsSortOrderDefault: 0,
-                subscriptionSetting: 0,
-                richTextEditor: true,
-                autoSaveComments: false
-            }
-            //
-            let settings = GM_getValue('CR_UI_SETTINGS', null);
-            if (settings !== null) { this.settings = JSON.parse(settings);}
-        }
-        //
-        save() {
-            GM_setValue('CR_UI_SETTINGS', JSON.stringify(this.settings));
-        }
-    }
-    const SETTINGS = new settingsClass();
+    const SETTINGS = getSettings();
+    const comment = document.getElementById('comment');
+    const profile = document.getElementById('profile-page');
     //
-    commentsSection(document.getElementById('comment'), SETTINGS.settings);
+    articles(comment, SETTINGS.settings);
     //
-    profileSettings(document.getElementById('profile-page'), SETTINGS);
+    otherPages(profile, comment, SETTINGS.settings);
     //
-    // settings that can be configured on the wordpress admin page
-    function profileSettings(pp, SETTINGS) {
-        if (!pp) { return; }
-        //
-        let style = [];
-        style.push('.cr_ui_so_ss > div { padding: 0.5em 0 0.5em; margin: 1em 0; }');
-        style.push('.cr_ui_so_ss > input { width: 15em; }');
-        style.push('.cr_ui_so_ss div div { display: inline-block; width: 15.6em; font-size: 14px; font-weight: 600; }');
-        style.push('.cr_ui_so_ss div div select { max-width: none; }');
-        style.push('.cr_ui_so_ss div div + div { width: 50em; }');
-        setStyle(style);
-        //
-        pp.appendChild(document.createElement('hr'));
-        let frame = document.createElement('div');
-        frame.className = 'cr_ui_so_ss';
-        pp.appendChild(frame);
-        //
-        const settings = SETTINGS.settings;
-        const sortOrderOptions = ['Default (as is)', 'Chronological descending', 'Chronological ascending', 'Own comment threads only'];
-        const subscriptionOptions = ['Do Not Send Email Notifications.', 'Send Email Notification ONLY If Someone Replies To My Comment(s).', 'Send Email Notification Whenever A New Comment Is Posted.'];
-        //
-        // alter the comment sort order
-        let commentSortOrderCheckbox = createCheckbox(frame, 'Alter the comment sort order', settings.commentsSortOrder);
-        // default comment sort order select box
-        let commentSortOrderSelect = createSelect(frame, 'Default comment sort order', sortOrderOptions, settings.commentsSortOrderDefault);
-        // save the subscription setting checkbox
-        let subscriptionCheckbox = createSelect(frame, 'Default subscription setting', subscriptionOptions, settings.subscriptionSetting);
-        // auto save/backup comments to prevent accidental loss
-        let autoSaveCommentsCheckbox = createCheckbox(frame, 'Auto backup comments', settings.autoSaveComments, true);
-        // rich text editor setting checkbox
-        let richTextCheckbox = createCheckbox(frame, 'Use the rich text editor', settings.richTextEditor);
-        //
-        createButton(frame, 'Save CR UI Enhancer settings', saveSettings);
-        //
-        function createButton(frame, text, fn) {
-            let save = document.createElement('input');
-            save.className = 'button button-primary';
-            save.type = 'button';
-            save.value = text;
-            frame.appendChild(save);
-            save.addEventListener('click', fn, false);
-        }
-        //
-        function saveSettings(e) {
-            settings.commentsSortOrder = commentSortOrderCheckbox.checked;
-            settings.commentsSortOrderDefault = commentSortOrderSelect.selectedIndex;
-            settings.subscriptionSetting = subscriptionCheckbox.selectedIndex;
-            settings.richTextEditor = richTextCheckbox.checked;
-            //
-            SETTINGS.save();
-            e.target._value = e.target.value
-            e.target.value = 'Saved!';
-            window.setTimeout(() => { e.target.value = e.target._value; }, 2500);
-        }
-        //
-        function createSelect(frame, text, options, setting) {
-            let div = document.createElement('div');
-            let div1 = document.createElement('div');
-            //
-            let span = document.createElement('span');
-            span.textContent = text;
-            div1.appendChild(span);
-            div.appendChild(div1);
-            //
-            div1 = document.createElement('div');
-            //
-            let select = document.createElement('select');
-            for (let i = 0, i_max = options.length; i < i_max; i++) { select.appendChild(createOption(options[i])); }
-            select.selectedIndex = setting;
-            //
-            div1.appendChild(select);
-            div.appendChild(div1);
-            frame.appendChild(div);
-            return select;
-            //
-            function createOption(text) {
-                let option = document.createElement('option');
-                option.textContent = text;
-                return option
-            }
-        }
-        //
-        function createCheckbox(frame, text, setting, disabled) {
-            let div = document.createElement('div');
-            let div1 = document.createElement('div');
-            //
-            let span = document.createElement('span');
-            span.textContent = text;
-            div1.appendChild(span);
-            div.appendChild(div1);
-            //
-            div1 = document.createElement('div');
-            //
-            let cb = document.createElement('input');
-            cb.type = 'checkbox';
-            if (disabled){ cb.disabled = true; }
-            cb.checked = setting;
-            //
-            div1.appendChild(cb);
-            div.appendChild(div1);
-            frame.appendChild(div);
-            //
-            return cb;
-        }
-    }
+    profilePage(profile, SETTINGS);
     //
-    function commentsSection(cs, settings) {
+    function articles(cs, settings) {
         if (!cs) { return; }
+        //
+        addStyles(settings, 0);
         //
         subscriptionSettings(document.getElementById('subscribe-reloaded'), settings.subscriptionSetting);
         //
         richTextComment(cs, settings.richTextEditor);
+        //
+        let list = document.getElementsByClassName('commentlist');
+        if (!list){ return; }
+        list = list[0];
+        //
+        unreadComments(list, settings.trackLastRead);
         //
         if (settings.commentsSortOrder !== true){ return; }
         //
@@ -210,11 +102,8 @@
                 GM_setValue('AUTOSAVE_DATA', JSON.stringify(this.data));
             }
         }
-        const autoSave = new autoSaveClass();
         //
-        let list = document.getElementsByClassName('commentlist');
-        if (!list){ return; }
-        list = list[0];
+        const autoSave = new autoSaveClass();
         //
         let displayName = document.getElementsByClassName('display-name');
         if (!displayName){ return; }
@@ -224,11 +113,101 @@
         //
         commentSortOrder(list, displayName, comments, settings.commentsSortOrderDefault);
         //
+        // correct the scroll offset issue that happens because of style changes happening
+        // a bit late in the page loading process. For comment andchored URLs only
+        window.setTimeout(fixScroll, 1000);
+        //
+        //
+        function fixScroll() {
+            //document.location = document.location;
+            // alternative
+            let url = document.location.href.split('/#');
+            if (url.length !== 2){ return; }
+            //
+            let li = document.getElementById(url[1]);
+            if (li === null){ return; }
+            //
+            let pos = 0;
+            while (li.offsetParent) {
+                pos += li.offsetTop;
+                li = li.offsetParent;
+            }
+            //
+            window.scroll(0, pos);
+        }
+        //
+        function unreadComments(list, setting) {
+            if (!list || setting !== true){ return; }
+            //
+            let comments = [];
+            const UNREAD = getUnread();
+            //
+            let li = list.getElementsByTagName('li');
+            let max_id = 0, id;
+            //
+            for (let i = 0, i_max = li.length; i < i_max; i++) {
+                id = Number(li[i].id.split('-')[1]);
+                if (max_id < id) { max_id = id; }
+                //
+                comments.push({
+                    li: li[i],
+                    id: id
+                });
+            }
+            //
+            comments.sort((a, b) => { return (a.id > b.id) ? 1 : -1; });
+            //
+            let path = document.location.href.split('/')[3];
+            let last_read_id = UNREAD.get(path, max_id);
+            let last_read = last_read_id;
+            //
+            if (last_read > 0) {
+                for (let i = 0, i_max = comments.length; i < i_max; i++) {
+                    if (last_read_id === comments[i].id) {
+                        last_read = i+1;
+                        break;
+                    }
+                }
+            } else if (last_read < 0) { last_read = comments.length; }
+            //
+            createToolbar(comments.length-last_read, document.getElementById('wp-admin-bar-top-secondary'));
+            //
+            //
+            function createToolbar(count, ul1) {
+                let div = document.createElement('div');
+                let span = document.createElement('span');
+                span.textContent = 'Unread comments: ' + count;
+                div.appendChild(span);
+                //
+                let ul = document.createElement('ul');
+                let li = document.createElement('li');
+                li.textContent = 'Next';
+                li.title = 'Go to next unread comment';
+                li.addEventListener('click', goToNextUnread, false);
+                ul.appendChild(li);
+                //
+                div.appendChild(ul);
+                ul1.parentNode.insertBefore(div, ul1);
+            }
+            //
+            function goToNextUnread() {
+                if (last_read === comments.length){ return; }
+                //
+                let li = comments[last_read].li;
+                let pos = 0;
+                while (li.offsetParent) {
+                    pos += li.offsetTop;
+                    li = li.offsetParent;
+                }
+                //
+                last_read++;
+                window.scroll(0, pos);
+            }
+        }
+        //
         // provide a rich text comment box and fix the character counter
         function richTextComment(comment, setting) {
             if (!comment || setting !== true){ return; }
-            //
-            GM_addStyle(GM_getResourceText("QUILLCSS"));
             //
             const regex_cl = /<p>/g;
             const regex_nl = /<br><\/p>|<\/p>|<br>/g;
@@ -239,9 +218,6 @@
             //
             let div = document.createElement('div');
             div.id = 'comment-div';
-            //div.style.minHeight = '12em';
-            div.style.maxHeight = '36em';
-            div.style.overflow = 'auto';
             //
             //comment.style.display = 'none';
             comment.style.height = 0;
@@ -308,18 +284,20 @@
         //
         // comment sort order alteration
         function commentSortOrder(list, displayName, comments, setting) {
-            let style = [];
-            style.push('.cr_ui_so_tb { float: right; clear: both; }');
-            style.push('.cr_ui_so_tb span { border: 0.1em #848484 solid; padding: 0em 0.2em; margin: 0 0.2em; user-select: none; cursor: default; color: #0000ff; border-radius: 0.2em; }');
-            style.push('.cr_ui_so_tb span:hover { opacity: 0.8; border-color: #d0d0d0; }');
-            setStyle(style);
+            //
+            let commentsSortOrder = {
+                default: null,
+                btns: []
+            }
+            //
+            createToolbar(document.getElementById('wp-admin-bar-top-secondary'), commentsSortOrder.btns);
             //
             let li = list.getElementsByTagName('li');
             //
             for (let i = 0, i_max = li.length; i < i_max; i++) {
                 // create the navigation toolbar
                 let cite = li[i].getElementsByTagName('cite')[0];
-                cite.parentNode.appendChild(createToolbar());
+                //cite.parentNode.appendChild(createToolbar());
                 //
                 let userName = cite.textContent.trim();
                 // calculate the creation date
@@ -337,7 +315,7 @@
                     originalParent: li[i].parentNode._comment
                     , originalParentDOM: li[i].parentNode // store original parent
                     , DOM: li[i] // comment dom (li)
-                    , id: a.href.split('-').pop() //comment id
+                    , id: Number(a.href.split('-').pop()) //comment id
                     , created: date.valueOf() //comment created date, unused ATM
                     , userName: userName
                     , own: (userName === displayName) ? true : false
@@ -372,17 +350,38 @@
                 //
                 parentComment.ownThread = true;
             }
+            //
             // sort comments chronologically by default
             comments.sort((a, b) => { return (a.id > b.id) ? 1 : -1; });
             //
-            switch (settings.commentsSortOrderDefault) {
-                case 0: defaultSortOrder(); break;
-                case 1: chronologicalSortOrderDesc(); break;
-                case 2: chronologicalSortOrderAsc(); break;
-                case 3: showOnlyOwnComments(); break;
-            }
+            commentsSortOrder.default = commentsSortOrder.btns[(setting > 3) ? 0 : setting];
             //
-            function createToolbar() {
+            commentsSortOrder.default.click();
+            //
+            function createToolbar(ul1, btns) {
+                let div = document.createElement('div');
+                let span = document.createElement('span');
+                span.textContent = 'Comments sorting order';
+                div.appendChild(span);
+                //
+                let ul = document.createElement('ul');
+                ul.appendChild(createButton('Default', 'Default sort order', defaultSortOrder, btns));
+                ul.appendChild(createButton('Descending', 'Chronological sort order, descending', chronologicalSortOrderDesc, btns));
+                ul.appendChild(createButton('Ascending', 'Chronological sort order, ascending', chronologicalSortOrderAsc, btns));
+                ul.appendChild(createButton('Threads', 'View only replies to my comments', showOnlyOwnComments, btns));
+                //
+                div.appendChild(ul);
+                ul1.parentNode.insertBefore(div, ul1);
+                //
+                function createButton(name, title, fn, btns) {
+                    let b = document.createElement('li');
+                    b.textContent = name;
+                    b.title = title;
+                    b.addEventListener('click', fn, false);
+                    btns.push(b);
+                    return b;
+                }
+                /*
                 let div = document.createElement('span');
                 div.className = 'cr_ui_so_tb';
                 //
@@ -400,28 +399,37 @@
                     b.addEventListener('click', fn, false);
                     return b;
                 }
+                */
             }
             //
-            function defaultSortOrder() {
+            function defaultSortOrder(e) {
+                if (checkButton(e.target) === false){ return; }
+                //
                 for (let i = 0, i_max = comments.length, comment; i < i_max; i++) {
                     comment = comments[i];
                     comment.originalParentDOM.appendChild(comment.DOM);
                 }
             }
             //
-            function chronologicalSortOrderDesc() {
+            function chronologicalSortOrderDesc(e) {
+                if (checkButton(e.target) === false){ return; }
+                //
                 for (let i = comments.length-1; i >= 0; i--) {
                     list.appendChild(comments[i].DOM);
                 }
             }
             //
-            function chronologicalSortOrderAsc() {
+            function chronologicalSortOrderAsc(e) {
+                if (checkButton(e.target) === false){ return; }
+                //
                 for (let i = 0, i_max = comments.length; i < i_max; i++) {
                     list.appendChild(comments[i].DOM);
                 }
             }
             //
-            function showOnlyOwnComments() {
+            function showOnlyOwnComments(e) {
+                if (checkButton(e.target) === false){ return; }
+                //
                 for (let i = 0, i_max = comments.length, comment; i < i_max; i++) {
                     comment = comments[i];
                     //console.log(comment.ownThread, comment.own, comment.userName)
@@ -431,6 +439,15 @@
                         comment.DOM.parentNode.removeChild(comment.DOM);
                     }
                 }
+            }
+            //
+            function checkButton(btn) {
+                if (btn.className === 'btn-clicked-def'){ return false; }
+                //
+                commentsSortOrder.default.className = '';
+                btn.className = 'btn-clicked-def';
+                commentsSortOrder.default = btn;
+                return true;
             }
         }
         //
@@ -445,10 +462,278 @@
         }
     }
     //
-    function setStyle(s) {
+    function otherPages(profile, comment, settings) {
+        if (profile !== null || comment !== null){ return; }
+        //
+        addStyles(settings, 1);
+    }
+    //
+    // settings that can be configured on the wordpress admin page
+    function profilePage(pp, SETTINGS) {
+        if (!pp) { return; }
+        //
+        addStyles(SETTINGS.settings, 2);
+        //
+        pp.appendChild(document.createElement('hr'));
+        let frame = document.createElement('div');
+        frame.className = 'cr_ui_so_ss';
+        pp.appendChild(frame);
+        //
+        const settings = SETTINGS.settings;
+        const sortOrderOptions = ['Default (as is)', 'Chronological descending', 'Chronological ascending', 'Own comment threads only'];
+        const subscriptionOptions = ['Do Not Send Email Notifications.', 'Send Email Notification ONLY If Someone Replies To My Comment(s).', 'Send Email Notification Whenever A New Comment Is Posted.'];
+        //
+        // alter the comment sort order
+        let commentSortOrderCheckbox = createCheckbox(frame, 'Alter the comment sort order', settings.commentsSortOrder);
+        // default comment sort order select box
+        let commentSortOrderSelect = createSelect(frame, 'Default comment sort order', sortOrderOptions, settings.commentsSortOrderDefault);
+        // save the subscription setting checkbox
+        let subscriptionCheckbox = createSelect(frame, 'Default subscription setting', subscriptionOptions, settings.subscriptionSetting);
+        // auto save/backup comments to prevent accidental loss
+        let autoSaveCommentsCheckbox = createCheckbox(frame, 'Auto backup comments', settings.autoSaveComments, true);
+        // rich text editor setting checkbox
+        let richTextCheckbox = createCheckbox(frame, 'Use the rich text editor', settings.richTextEditor);
+        // redesign page
+        let redesignPageCheckbox = createCheckbox(frame, 'A non invasive restyle', settings.redesignPage);
+        // dark mode
+        let darkModeCheckbox = createCheckbox(frame, 'Dark mode, easy on your eyes', settings.darkMode);
+        // track unread
+        let trackLastReadCheckbox = createCheckbox(frame, 'Track last read comment', settings.trackLastRead);
+        //
+        createButton(frame, 'Save CR UI Enhancer settings', saveSettings);
+        //
+        function saveSettings(e) {
+            settings.commentsSortOrder = commentSortOrderCheckbox.checked;
+            settings.commentsSortOrderDefault = commentSortOrderSelect.selectedIndex;
+            settings.subscriptionSetting = subscriptionCheckbox.selectedIndex;
+            settings.richTextEditor = richTextCheckbox.checked;
+            settings.redesignPage = redesignPageCheckbox.checked;
+            settings.darkMode = darkModeCheckbox.checked;
+            settings.trackLastRead = trackLastReadCheckbox.checked;
+            //
+            SETTINGS.save();
+            e.target._value = e.target.value
+            e.target.value = 'Saved!';
+            window.setTimeout(() => { e.target.value = e.target._value; }, 2500);
+        }
+        //
+        function createButton(frame, text, fn) {
+            let save = document.createElement('input');
+            save.className = 'button button-primary';
+            save.type = 'button';
+            save.value = text;
+            frame.appendChild(save);
+            save.addEventListener('click', fn, false);
+        }
+        //
+        function createSelect(frame, text, options, setting) {
+            let div = document.createElement('div');
+            let div1 = document.createElement('div');
+            //
+            let span = document.createElement('span');
+            span.textContent = text;
+            div1.appendChild(span);
+            div.appendChild(div1);
+            //
+            div1 = document.createElement('div');
+            //
+            let select = document.createElement('select');
+            for (let i = 0, i_max = options.length; i < i_max; i++) { select.appendChild(createOption(options[i])); }
+            select.selectedIndex = setting;
+            //
+            div1.appendChild(select);
+            div.appendChild(div1);
+            frame.appendChild(div);
+            return select;
+            //
+            function createOption(text) {
+                let option = document.createElement('option');
+                option.textContent = text;
+                return option
+            }
+        }
+        //
+        function createCheckbox(frame, text, setting, disabled) {
+            let div = document.createElement('div');
+            let div1 = document.createElement('div');
+            //
+            let span = document.createElement('span');
+            span.textContent = text;
+            div1.appendChild(span);
+            div.appendChild(div1);
+            //
+            div1 = document.createElement('div');
+            //
+            let cb = document.createElement('input');
+            cb.type = 'checkbox';
+            if (disabled){ cb.disabled = true; }
+            cb.checked = setting;
+            //
+            div1.appendChild(cb);
+            div.appendChild(div1);
+            frame.appendChild(div);
+            //
+            return cb;
+        }
+    }
+    //
+    //
+    function addStyles(settings, page) {
+        /*
+          0 - articles
+          1 - other pages
+          2 - profile
+        */
+        //console.log(settings, page);
+        let s = [];
+        //
+        if (settings.darkMode === true) {
+            // dark mode styling
+            s.push('p::-moz-selection { color: black; background-color: #e1b240; }');
+            s.push('p::selection { color: black; background-color: #e1b240; }');
+            s.push('* { scrollbar-color: #202324 #454a4d; }');
+            s.push('html, body, #related, div#topnav { background-color: #1e2021; color: #b2aca2; }');
+            s.push('#topnav { box-shadow: inset 0px 0px 10px #000; }');
+            s.push('#topnav ul.clearfix > li.menu-item, #topnav ul.clearfix > li.menu-item > a { background-color: transparent; }');
+            s.push('div#outer-wrap, #topnav .menu-item { background-color: #181a1b; border-color: #776e62; /*color: #e8e6e3;*/ }');
+            s.push('div#outer-wrap, div#wrap, div#header, div#page, h3.widgettitle span { background-color: #181a1b; /*color: #e8e6e3;*/ }');
+            s.push('.comment-body { background-color: #1e2021; }');
+            s.push('.comment-body blockquote, .entry blockquote { background-color: #181a1b; box-shadow: inset 0px 0px 10px #000; border-radius: 0.3em; color: #938d82; font-family: cursive; }');
+            s.push('#topnav ul a, #topnav ul a:link, #topnav ul a:visited, #topnav ul a:hover, #topnav ul ul a:hover { background-color: #181a1b; color: #337dff; text-shadow: 0 1px 0 #111; }');
+            s.push('.maincontent a, .maincontent a:link, .maincontent a:visited { color: #337dff; }');
+            s.push('.button-submit { float: right; clear: both; }');
+            s.push('#searchform #searchfield, #searchform #submitbutton, #commentform .button-submit > input#submit, #commentlen, #subscribe-reloaded { background-color: #1e2021; border: 0.1em #ccc solid; color: #ccc; }');
+            s.push('h1, h2, h3, h4, h5 { color: #b2aca2; }');
+            s.push('h1.archive-title span, h2.feature-title span, h2.feat-title span, h3.widgettitle span { background-color: #181a1b; color: #b2aca2; }');
+            s.push('#header + table tr { background-color: #1e2021; }');
+            s.push('#header + table select { background-color: #181a1b; color: #b2aca2; }');
+            s.push('div.sce-textarea textarea { background-color: #181a1b; color: #b2aca2; }');
+            s.push('div.sce-textarea button { background-color: #181a1b; border-color: #776e62; color: #b2aca2; margin: 0.2em 0 0 0.2em; }');
+            //
+            if (settings.commentsSortOrder === true) {
+                s.push('#wpadminbar > div > div > ul li.btn-clicked-def { color: #d0d0d0; background-color: #181a1b; border-color: #d0d0d0; }');
+            }
+        }
+        //
+        if (page !== 2) {
+            // articles and other pages
+            if (settings.redesignPage === true) {
+                // page redesign styling
+                s.push('body { padding-top: 1em; border-top: 0; font-family: Helvetica; }');
+                s.push('#outer-wrap { max-width: 87em; padding: 0 1em; }');
+                s.push('#contentleft { width: 68%; }');
+                s.push('#contentright { width: 30.5%; }');
+                s.push('#sidebar { padding-top: 7px; }');
+                s.push('li.comment > ul.children { padding-left: 1.8em; margin-left: 0; border-left: 0.1em dashed #a2a2a2; }');
+                s.push('li.comment > div.comment-body { box-shadow: inset 0 0 5px black; }');
+                s.push('.commentlist li { font-size: 1em; }');
+                s.push('.textwidget > p { display: inline-block; margin-bottom: 0; }');
+                s.push('.textwidget > p + p { float: right; clear: both; }');
+                s.push('.widget { margin-bottom: 1em; }');
+                s.push('#text-3 > div { width: 49%; display: inline-block; }');
+                s.push('#text-3 > div + div { float: right; clear: both; }');
+                s.push('#logo { text-align: center; }');
+                //
+                // bump up the IPFS banner
+                document.getElementById('text-3').appendChild(document.getElementsByClassName('widget_text widget-wrap')[0]);
+            }
+            //
+            if (page === 0) {
+                // articles page
+                if (settings.commentsSortOrder === true) {
+                    // comments sort order
+                    //s.push('.cr_ui_so_tb { float: right; clear: both; }');
+                    //s.push('.cr_ui_so_tb span { box-shadow: 0px 0px 1px #888; background-color: #d5d5d5; border: 0.1em #d5d5d5 solid; padding: 0.25em 0.1em 0 0.1em; margin: 0 0.2em; user-select: none; cursor: default; color: #0000ff; border-radius: 0.2em; }');
+                    //s.push('.cr_ui_so_tb span:hover { opacity: 0.8; border-color: #d0d0d0; }');
+                    s.push('#wpadminbar > div > div > ul { margin-top: 0.4em; display: inline-block; }');
+                    s.push('#wpadminbar > div > div > ul li { line-height: 1; box-shadow: 0px 0px 1px #888; background-color: #d5d5d5; border: 0.1em #d5d5d5 solid; padding: 0.2em; margin: 0 0.2em; user-select: none; cursor: default; color: black; border-radius: 0.2em; }');
+                    s.push('#wpadminbar > div > div > ul li:hover { opacity: 0.8; border-color: #d0d0d0; }');
+                    s.push('#wpadminbar > div > div { display: inline-block; vertical-align: top; }');
+                    s.push('#wpadminbar > div > div > span { display: inline-block; margin: 0.7em 1em 0 2.5em; line-height: 1.2; vertical-align: top; font-weight: 700; }}');
+                    s.push('#wpadminbar > div > div > ul li.btn-clicked-def { color: #181a1b; background-color: #d0d0d0; border-color: #181a1b; }');
+                }
+                //
+                if (settings.richTextEditor === true) {
+                    // rich text editor styles
+                    GM_addStyle(GM_getResourceText("QUILLCSS"));
+                    //
+                    s.push('.ql-container { max-height: 36em; overflow: auto; min-height: 18em; font-size: 1em; }');
+                    s.push('.ql-editor { min-height: 18em; padding: 0.5em; }');
+                    s.push('#comment { height: 0; opacity: 0; padding: 0; }');
+                }
+            }
+        } else {
+            // profile page
+            s.push('.cr_ui_so_ss > div { padding: 0.5em 0 0.5em; margin: 1em 0; }');
+            s.push('.cr_ui_so_ss > input { width: 15em; }');
+            s.push('.cr_ui_so_ss div div { display: inline-block; width: 15.6em; font-size: 14px; font-weight: 600; }');
+            s.push('.cr_ui_so_ss div div select { max-width: none; }');
+            s.push('.cr_ui_so_ss div div + div { width: 50em; }');
+        }
+        //
         let style = document.createElement('style');
         style.textContent = s.join(' ');
         document.head.appendChild(style);
     }
     //
+    //
+    function getSettings() {
+        class settingsClass {
+            constructor() {
+                this.path = 'CR_UI_SETTINGS';
+                this.settings = {
+                    commentsSortOrder: true,
+                    commentsSortOrderDefault: 0,
+                    subscriptionSetting: 0,
+                    richTextEditor: true,
+                    autoSaveComments: false,
+                    redesignPage: false,
+                    darkMode: false,
+                    fontSize: 0,
+                    trackLastRead: false
+                };
+                //
+                let settings = GM_getValue(this.path, null);
+                if (settings !== null) { this.settings = JSON.parse(settings);}
+            }
+            //
+            save() {
+                GM_setValue(this.path, JSON.stringify(this.settings));
+            }
+        }
+        //
+        return new settingsClass();
+    }
+    //
+    //
+    function getUnread() {
+        class unreadClass {
+            constructor() {
+                this.path = 'CR_UI_UNREAD';
+                this.unread = {
+                    //"article_path": last_read_comment_id
+                };
+                //
+                //GM_deleteValue(this.path);
+                let unread = GM_getValue(this.path, null);
+                if (unread !== null) { this.unread = JSON.parse(unread);}
+            }
+            //
+            get(path, id) {
+                let last_read = this.unread[path];
+                if (last_read === id) { return -1; }
+                //
+                this.unread[path] = id;
+                this.save();
+                //
+                return last_read | 0;
+            }
+            //
+            save() {
+                GM_setValue(this.path, JSON.stringify(this.unread));
+            }
+        };
+        //
+        return new unreadClass();
+    }
 })();
