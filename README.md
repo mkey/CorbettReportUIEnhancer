@@ -94,3 +94,5 @@ Here are the two new layouts combined. This would also be the recommended way to
 ![images/cr-ui-rich-text-2.png](images/cr-ui-toolbar-v0.2.png.png)
 
 **Note** - comment sort order buttons have now been moved to the toolbar on the top of the page.
+
+11. **NEW IN V0.2** the script should from this point onward automatically offer updates, from time to time, depending on Tampermonkey settings.
