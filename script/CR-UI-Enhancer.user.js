@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CR UI Enhancer
 // @namespace    https://github.com/mkey/CorbettReportUIEnhancer/
-// @version      0.2
+// @version      0.3
 // @description  CorbettReport User interface enghancer script. Visit https://github.com/mkey/CorbettReportUIEnhancer/ for details.
 // @author       mkey
 // @homepage     https://github.com/mkey/
@@ -26,22 +26,32 @@
     //
     const SETTINGS = getSettings();
     const comment = document.getElementById('comment');
+    const editbox = document.getElementsByClassName('sce-comment-text');
     const profile = document.getElementById('profile-page');
     //
-    articles(comment, SETTINGS.settings);
+    const SEARCH_ENGINE = 'https://metager.org/meta/meta.ger3?eingabe=';
+    //
+    articles(comment, editbox, SETTINGS.settings);
     //
     otherPages(profile, comment, SETTINGS.settings);
     //
     profilePage(profile, SETTINGS);
     //
-    function articles(cs, settings) {
+    function articles(cs, eb, settings) {
         if (!cs) { return; }
         //
         addStyles(settings, 0);
         //
         subscriptionSettings(document.getElementById('subscribe-reloaded'), settings.subscriptionSetting);
         //
-        richTextComment(cs, settings.richTextEditor);
+        // wait for extra sce-comment-text to be removed
+        window.setTimeout(function() {
+            richTextComment(cs, 'comment-div', 'commentlen', settings.richTextEditor);
+            //console.log(eb[0].parentNode);
+            for (let i = 0, i_max = eb.length; i < i_max; i++) {
+                richTextComment(eb[i], 'comment-div' + i, null, settings.richTextEditor);
+            }
+        }, 5);
         //
         let list = document.getElementsByClassName('commentlist');
         if (!list){ return; }
@@ -112,6 +122,12 @@
         const comments = [];
         //
         commentSortOrder(list, displayName, comments, settings.commentsSortOrderDefault);
+        //
+        // add IPFS URL to the article title
+        addIpfsUrl();
+        //
+        // add a comment search button in an external search engine
+        addCommentSearch();
         //
         // correct the scroll offset issue that happens because of style changes happening
         // a bit late in the page loading process. For comment andchored URLs only
@@ -206,59 +222,59 @@
         }
         //
         // provide a rich text comment box and fix the character counter
-        function richTextComment(comment, setting) {
-            if (!comment || setting !== true){ return; }
+        function richTextComment(box, boxId, counterId, setting) {
+            //console.log(boxId, counterId);
+            if (!box || setting !== true){ return; }
             //
             const regex_cl = /<p>/g;
             const regex_nl = /<br><\/p>|<\/p>|<br>/g;
             const regex_bq = /<\/blockquote><blockquote>/g;
             const regex_nl2 = /\r\n/g;
             //
-            const CHAR_COUNT = 3000;
-            //
             let div = document.createElement('div');
-            div.id = 'comment-div';
+            div.id = boxId;
             //
             //comment.style.display = 'none';
-            comment.style.height = 0;
-            comment.style.opacity = 0;
-            comment.style.padding = 0;
-            comment.parentNode.appendChild(div);
+            box.style.height = 0;
+            box.style.opacity = 0;
+            box.style.padding = 0;
+            box.parentNode.appendChild(div);
             //
             class Counter {
                 constructor(quill, options) {
+                    this.CHAR_COUNT = 3000;
                     this.quill = quill;
                     this.options = options;
-                    this.counter = document.querySelector(options.container);
+                    this.counter = (options.container) ? document.querySelector(options.container) : null;
                     //
-                    quill.root.innerHTML = '<p>' + comment.value.replace(regex_nl2, '<\p><p>') + '</p>';
+                    let text = box.defaultValue;
+                    //console.log(text, text.replace(regex_nl2, '<\p><p>'))
+                    quill.root.innerHTML = '<p> ' + text.replace(regex_nl2, '<\p><p>') + '</p>'; // empty space after <p> is a fix/hack
                     quill.on('text-change', this.update.bind(this));
                     //
-                    comment.addEventListener('focus', (e) => { document.getElementsByClassName('ql-editor')[0].focus(); }, false);
+                    box.addEventListener('focus', (e) => { document.getElementsByClassName('ql-editor')[0].focus(); }, false);
                     //
-                    this.textArea = comment;
+                    this.textArea = box;
                     this.update();// Account for initial contents
                 }
                 //
                 update() {
-                    let count = CHAR_COUNT - this.quill.getText().trim().length;
-                    this.counter.style.backgroundColor = (count >= 0) ? '' : 'red';
-                    this.counter.value = count;
+                    if (this.counter !== null) {
+                        let count = this.CHAR_COUNT - this.quill.getText().trim().length;
+                        this.counter.style.backgroundColor = (count >= 0) ? '' : 'red';
+                        this.counter.value = count;
+                    }
                     //
-                    this.textArea.value = this.quill.root.innerHTML
-                        .replace(regex_cl, '')
-                        .replace(regex_nl, '\r\n')
-                        .replace(regex_bq, '\r\n')
-                        .trim();
+                    this.textArea.value = this.quill.root.innerHTML.replace(regex_cl, '').replace(regex_nl, '\r\n').replace(regex_bq, '\r\n').trim();
                 }
             }
             //
             Quill.register('modules/counter', Counter);
             //
-            let quill = new Quill('#comment-div', {
+            let quill = new Quill('#' + boxId, {
                 theme: 'snow',
                 modules: {
-                    counter: { container: '#commentlen' },
+                    counter: { container: (counterId !== null) ? '#' + counterId : null },
                     toolbar: {
                         handlers: {
                             /*
@@ -292,7 +308,7 @@
             //
             createToolbar(document.getElementById('wp-admin-bar-top-secondary'), commentsSortOrder.btns);
             //
-            let li = list.getElementsByTagName('li');
+            let li = list.getElementsByTagName('li'), file;
             //
             for (let i = 0, i_max = li.length; i < i_max; i++) {
                 // create the navigation toolbar
@@ -334,6 +350,8 @@
                     span.innerHTML = 'replies to: <a href= ' + parentComment.URL + '>' + parentComment.userName +'</a>';
                 }
                 //
+                CreateEmailButton(cite.parentNode);
+                //
                 comments.push(comment);
             }
             // check for comments in reply to own comments
@@ -357,6 +375,83 @@
             commentsSortOrder.default = commentsSortOrder.btns[(setting > 3) ? 0 : setting];
             //
             commentsSortOrder.default.click();
+            //
+            function CreateEmailButton(n) {
+                let NS = 'http://www.w3.org/2000/svg';
+                //
+                let a = document.createElement('a');
+                a.className = 'send-email-button';
+                a.href = '#';
+                //a.style.fontSize = '14px';
+                a.title = 'Send this comment via email';
+                a.setAttribute('download', 'message.eml');
+                a.addEventListener('click', BuildEmail, false);
+                //
+                let svg = document.createElementNS(NS, 'svg');
+                svg.setAttribute('xmlns', NS);
+                svg.setAttribute('viewBox', '0 0 16 16');
+                //
+                let path = document.createElementNS(NS, 'path');
+                path.setAttribute('stroke', 'currentColor');
+                path.setAttribute('fill', 'transparent');
+                path.setAttribute('d', 'M0.5 4 l14 0 l-7 5.5 l-7 -5.5 l0 10 l14 0 l0 -10');
+                //
+                svg.appendChild(path);
+                a.appendChild(svg);
+                //n.insertBefore(a, n.firstElementChild);
+                n.appendChild(a);
+            }
+            //
+            function BuildEmail(e) {
+                let a = e.target;
+                while (a.tagName !== 'A'){ a = a.parentNode; }
+                //
+                let comment = a.parentNode.parentNode;
+                let URL = comment.getElementsByClassName('comment-meta commentmetadata')[0].getElementsByTagName('a')[0].href;
+                //
+                let text = [];
+                text.push('Date: ' + new Date());
+                //text.push('From: from');
+                //text.push('Sender: Support@Cenosco.com');
+                //text.push('Reply-To: Support@Cenosco.com');
+                //text.push('SMTP: Support@Cenosco.com');
+                //text.push('To: to');
+                text.push('Subject: Comment from Corbettreport.com');
+                text.push('X-Unsent: 1');
+                text.push('Content-Type: text/html; charset=UTF-8');
+                text.push('');
+                text.push('<html><head><style>');
+                text.push('.table { width: 60em; }');
+                text.push('</style></head><body><table class="table"><tbody><tr><td>');
+                text.push('Below comment is sent via email');
+                text.push('<hr /></td></tr><tr><td>');
+                text.push(HandleHTML(comment));
+                text.push('</td></tr><tr><td class="issue-header"><br /><hr /><br />Original comment URL: ' + URL + '</td></tr>');
+                text.push('</tbody></table></body></html>');
+                //
+                if (file !== null){ window.URL.revokeObjectURL(file); }
+                file = window.URL.createObjectURL(new Blob([text.join('\r\n')], {type: 'message/rfc822; charset=UTF-8'}));
+                //
+                a.href = file;
+                //
+                window.setTimeout(2000, function() {
+                    a.href = '#';
+                    //debug(window.URL.revokeObjectURL(file));
+                    file = null;
+                });
+                //
+                function HandleHTML(html) {
+                    html = html.cloneNode(true);
+                    //
+                    let btn = html.getElementsByClassName('send-email-button')[0];
+                    btn.parentNode.removeChild(btn);
+                    //
+                    btn = html.getElementsByClassName('reply')[0];
+                    btn.parentNode.removeChild(btn);
+                    //
+                    return html.innerHTML.trim();
+                }
+            }
             //
             function createToolbar(ul1, btns) {
                 let div = document.createElement('div');
@@ -459,6 +554,43 @@
             sub.selectedIndex = setting;
             //
             //sub.addEventListener('change', () => { settings.subscriptionSetting = sub.selectedIndex; settings.save(); }, false);
+        }
+        //
+        // add (a possible/eventual) IPFS alternative URL to the article header
+        function addIpfsUrl() {
+            let h1 = document.getElementsByTagName('h1');
+            if (h1.length === 0){ return; }
+            //
+            h1 = h1[0];
+            let a = h1.getElementsByTagName('a')[0];
+            //
+            let s = document.createElement('span');
+            s.textContent = ' [ ';
+            h1.appendChild(s);
+            //
+            let a1 = document.createElement('a');
+            a1.title = 'This artice/video might be availabe on IPFS, there\'s only one way to find out';
+            a1.href = a.href.replace('https://www.corbettreport.com/', 'https://ipfs.io/ipns/QmNqHuSVuufkBKK1LHtoUmKETobZriC1o5uoiXSoLX2i3K/');
+            a1.textContent = 'IPFS';
+            h1.appendChild(a1);
+            //
+            s = document.createElement('span');
+            s.textContent = ' (?) ] ';
+            h1.appendChild(s);
+        }
+        // add a button for external site search, opens in a new tab
+        function addCommentSearch() {
+            let s = document.getElementById('searchform');
+            let b = document.createElement('input');
+            b.type = 'button';
+            b.value = 'Site search';
+            b.title = 'Search for site content on an external search engine in a new tab';
+            //
+            b.addEventListener('click', () => {
+                window.open(encodeURI(SEARCH_ENGINE + 'site:corbettreport.com ' + document.getElementById('searchfield').value), '_blank');
+            }, false);
+            //
+            s.appendChild(b);
         }
     }
     //
@@ -585,33 +717,61 @@
           2 - profile
         */
         //console.log(settings, page);
+        if (settings.redesignPage === true || settings.darkMode === true) {
+            let link = document.createElement('link');
+            link.href = 'https://fonts.googleapis.com';
+            link.rel = 'preconnect';
+            document.head.appendChild(link);
+            link = document.createElement('link');
+            link.href = 'https://fonts.gstatic.com';
+            link.rel = 'preconnect';
+            link.crossorigin = true;
+            document.head.appendChild(link);
+            link = document.createElement('link');
+            link.href = 'https://fonts.googleapis.com/css2?family=Merienda:wght@400;700&family=Roboto:ital,wght@0,400;0,700;1,400;1,700&display=swap';
+            link.rel = 'stylesheet';
+            document.head.appendChild(link);
+        }
+        //
         let s = [];
+        //
+        s.push('#searchform #submitbutton + input { font-weight: bold; font-size: 10pt; padding: 3px; cursor: pointer; }');
         //
         if (settings.darkMode === true) {
             // dark mode styling
             s.push('p::-moz-selection { color: black; background-color: #e1b240; }');
             s.push('p::selection { color: black; background-color: #e1b240; }');
             s.push('* { scrollbar-color: #202324 #454a4d; }');
-            s.push('html, body, #related, div#topnav { background-color: #1e2021; color: #b2aca2; }');
+            s.push('html, body, #related, div#topnav, table#textEdit tr, table#textEdit strong, .followit--follow-form-container, .followit--follow-form-container .form-preview { background-color: #1e2021!important; color: #b2aca2; }');
+            //s.push('table#textEdit span { color: #b2aca2!important; }');
             s.push('#topnav { box-shadow: inset 0px 0px 10px #000; }');
             s.push('#topnav ul.clearfix > li.menu-item, #topnav ul.clearfix > li.menu-item > a { background-color: transparent; }');
             s.push('div#outer-wrap, #topnav .menu-item { background-color: #181a1b; border-color: #776e62; /*color: #e8e6e3;*/ }');
             s.push('div#outer-wrap, div#wrap, div#header, div#page, h3.widgettitle span { background-color: #181a1b; /*color: #e8e6e3;*/ }');
             s.push('.comment-body { background-color: #1e2021; }');
-            s.push('.comment-body blockquote, .entry blockquote { background-color: #181a1b; box-shadow: inset 0px 0px 10px #000; border-radius: 0.3em; color: #938d82; font-family: cursive; }');
+            //s.push('.comment-body blockquote, .entry blockquote { background-color: #181a1b; box-shadow: inset 0px 0px 10px #000; border-radius: 0.3em; color: #938d82; font-family: cursive; }');
+            s.push('.comment-body blockquote, .entry blockquote { background-color: #181a1b; box-shadow: inset 0px 0px 10px #000; border-radius: 0.3em; color: #b5b1a9; font-family: Merienda, cursive; font-size: 0.9em; }');
             s.push('#topnav ul a, #topnav ul a:link, #topnav ul a:visited, #topnav ul a:hover, #topnav ul ul a:hover { background-color: #181a1b; color: #337dff; text-shadow: 0 1px 0 #111; }');
             s.push('.maincontent a, .maincontent a:link, .maincontent a:visited { color: #337dff; }');
             s.push('.button-submit { float: right; clear: both; }');
-            s.push('#searchform #searchfield, #searchform #submitbutton, #commentform .button-submit > input#submit, #commentlen, #subscribe-reloaded { background-color: #1e2021; border: 0.1em #ccc solid; color: #ccc; }');
-            s.push('h1, h2, h3, h4, h5 { color: #b2aca2; }');
+            s.push('#searchform #searchfield, #searchform #submitbutton, #searchform #submitbutton + input, #commentform .button-submit > input#submit, #commentlen, #subscribe-reloaded { background-color: #1e2021; border: 0.1em #ccc solid; color: #ccc; }');
+            s.push('h1, h2, h3, h4, h5 { color: #b2aca2!important; }');
             s.push('h1.archive-title span, h2.feature-title span, h2.feat-title span, h3.widgettitle span { background-color: #181a1b; color: #b2aca2; }');
             s.push('#header + table tr { background-color: #1e2021; }');
             s.push('#header + table select { background-color: #181a1b; color: #b2aca2; }');
             s.push('div.sce-textarea textarea { background-color: #181a1b; color: #b2aca2; }');
             s.push('div.sce-textarea button { background-color: #181a1b; border-color: #776e62; color: #b2aca2; margin: 0.2em 0 0 0.2em; }');
+            s.push('table.form-table label, table.form-table th { color: #b2aca2; };');
             //
             if (settings.commentsSortOrder === true) {
                 s.push('#wpadminbar > div > div > ul li.btn-clicked-def { color: #d0d0d0; background-color: #181a1b; border-color: #d0d0d0; }');
+            }
+            //
+            if (settings.richTextEditor === true) {
+                //
+                s.push('.ql-editor blockquote, .ql-snow .ql-editor code, .ql-container > .ql-tooltip { background-color: #3b3b3d; color: #b2aca2; }');
+                s.push('.ql-container > .ql-tooltip { margin-left: 10em; box-shadow: 0 0 5px black; }');
+                s.push('.ql-container > .ql-tooltip a { color: #b2aca2; }');
             }
         }
         //
@@ -619,7 +779,7 @@
             // articles and other pages
             if (settings.redesignPage === true) {
                 // page redesign styling
-                s.push('body { padding-top: 1em; border-top: 0; font-family: Helvetica; }');
+                s.push('body { padding-top: 1em; border-top: 0; font-family: Roboto, Helvetica, sans-serif; }');
                 s.push('#outer-wrap { max-width: 87em; padding: 0 1em; }');
                 s.push('#contentleft { width: 68%; }');
                 s.push('#contentright { width: 30.5%; }');
@@ -630,9 +790,14 @@
                 s.push('.textwidget > p { display: inline-block; margin-bottom: 0; }');
                 s.push('.textwidget > p + p { float: right; clear: both; }');
                 s.push('.widget { margin-bottom: 1em; }');
-                s.push('#text-3 > div { width: 49%; display: inline-block; }');
-                s.push('#text-3 > div + div { float: right; clear: both; }');
+                s.push('#text-3 > div { width: 100%; display: inline-block; }');
+                s.push('#text-3 > div + div { }');
                 s.push('#logo { text-align: center; }');
+                s.push('div.followit--follow-form-container { margin: 0 auto 1em auto; padding: 10px 20px; }');
+                s.push('div.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] > form > div.form-preview { margin-top: 0!important; }');
+                s.push('div.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-input-field input { height: 30px!important; }');
+                s.push('div.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-submit-button button { height: 30px!important; }');
+                s.push('#searchform > #submitbutton { margin: 0 0.25em; }');
                 //
                 // bump up the IPFS banner
                 document.getElementById('text-3').appendChild(document.getElementsByClassName('widget_text widget-wrap')[0]);
@@ -645,12 +810,15 @@
                     //s.push('.cr_ui_so_tb { float: right; clear: both; }');
                     //s.push('.cr_ui_so_tb span { box-shadow: 0px 0px 1px #888; background-color: #d5d5d5; border: 0.1em #d5d5d5 solid; padding: 0.25em 0.1em 0 0.1em; margin: 0 0.2em; user-select: none; cursor: default; color: #0000ff; border-radius: 0.2em; }');
                     //s.push('.cr_ui_so_tb span:hover { opacity: 0.8; border-color: #d0d0d0; }');
-                    s.push('#wpadminbar > div > div > ul { margin-top: 0.4em; display: inline-block; }');
+                    s.push('#wpadminbar > div > div > ul { margin-top: 0.45em; display: inline-block; }');
                     s.push('#wpadminbar > div > div > ul li { line-height: 1; box-shadow: 0px 0px 1px #888; background-color: #d5d5d5; border: 0.1em #d5d5d5 solid; padding: 0.2em; margin: 0 0.2em; user-select: none; cursor: default; color: black; border-radius: 0.2em; }');
                     s.push('#wpadminbar > div > div > ul li:hover { opacity: 0.8; border-color: #d0d0d0; }');
                     s.push('#wpadminbar > div > div { display: inline-block; vertical-align: top; }');
-                    s.push('#wpadminbar > div > div > span { display: inline-block; margin: 0.7em 1em 0 2.5em; line-height: 1.2; vertical-align: top; font-weight: 700; }}');
+                    s.push('#wpadminbar > div > div > span { display: inline-block; margin: 0.6em 1em 0 2.5em; line-height: 1.2; vertical-align: top; font-weight: 700; }}');
                     s.push('#wpadminbar > div > div > ul li.btn-clicked-def { color: #181a1b; background-color: #d0d0d0; border-color: #181a1b; }');
+                    s.push('.sce-comment-delete { float:none!important; }');
+                    s.push('.send-email-button { width: 1em; display: block; float: right; }');
+                    s.push('.send-email-button:hover { opacity: 0.8; }');
                 }
                 //
                 if (settings.richTextEditor === true) {
