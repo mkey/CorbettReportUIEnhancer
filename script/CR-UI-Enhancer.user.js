@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CR UI Enhancer
 // @namespace    https://github.com/mkey/CorbettReportUIEnhancer/
-// @version      0.3
+// @version      0.31
 // @description  CorbettReport User interface enghancer script. Visit https://github.com/mkey/CorbettReportUIEnhancer/ for details.
 // @author       mkey
 // @homepage     https://github.com/mkey/
@@ -578,26 +578,15 @@
             s.textContent = ' (?) ] ';
             h1.appendChild(s);
         }
-        // add a button for external site search, opens in a new tab
-        function addCommentSearch() {
-            let s = document.getElementById('searchform');
-            let b = document.createElement('input');
-            b.type = 'button';
-            b.value = 'Site search';
-            b.title = 'Search for site content on an external search engine in a new tab';
-            //
-            b.addEventListener('click', () => {
-                window.open(encodeURI(SEARCH_ENGINE + 'site:corbettreport.com ' + document.getElementById('searchfield').value), '_blank');
-            }, false);
-            //
-            s.appendChild(b);
-        }
     }
     //
     function otherPages(profile, comment, settings) {
         if (profile !== null || comment !== null){ return; }
         //
         addStyles(settings, 1);
+        //
+        // add a comment search button in an external search engine
+        addCommentSearch();
     }
     //
     // settings that can be configured on the wordpress admin page
@@ -903,5 +892,20 @@
         };
         //
         return new unreadClass();
+    }
+    //
+    // add a button for external site search, opens in a new tab
+    function addCommentSearch() {
+        let s = document.getElementById('searchform');
+        let b = document.createElement('input');
+        b.type = 'button';
+        b.value = 'Site search';
+        b.title = 'Search for site content on an external search engine in a new tab';
+        //
+        b.addEventListener('click', () => {
+            window.open(encodeURI(SEARCH_ENGINE + 'site:corbettreport.com ' + document.getElementById('searchfield').value), '_blank');
+        }, false);
+        //
+        s.appendChild(b);
     }
 })();
