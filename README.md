@@ -101,17 +101,17 @@ Here are the two new layouts combined. This would also be the recommended way to
 
 ![images/edit_box_rich_text.png](images/edit_box_rich_text.png)
 
-13. **NEW IN V0.3** to (far?) right of the article title, on the top of the page, now there will be a clickable IPFS URL for the same article.
+13. **NEW IN V0.3** on the top of the page, to the (far?) right of the article title, now there will be a clickable IPFS URL for the same article.
 
 ![images/ipfs_url.png](images/ipfs_url.png)
 
 **Note** - This URL might not exist, we are merely guessing that it exists. Thus the question mark. The URL will, in fact, be valid once the IPFS mirror of [corbettreport.com](https://www.corbettreport.com/) is updated.
 
-14. **NEW IN V0.3** an option to share comments from the [corbettreport.com](https://www.corbettreport.com/) comments section via email has been made available. Upon clicking the button an eml file will be created (some browsers might declare this file to be *unsafe*, use your judgement) that will open in many email clients as a new email that is ready to be sent toward unsuspecting recipients.
+14. **NEW IN V0.3** an option to share comments from the [corbettreport.com](https://www.corbettreport.com/) comments section via email has been made available. Upon clicking the button an eml file will be created (some browsers might declare this file to be *unsafe*, use your judgement) and offered for download. This file will open in many email clients as a new email that is ready to be sent toward unsuspecting recipients.
 
 ![images/send_comment_via_email.png](images/send_comment_via_email.png)
 
-15. **NEW IN V0.3** a site search button has been added to the search box in the top right. The **Search** button searches the site the usual way, while the **Site search** button will search the site in the provided external search engine. This search will include results from the [corbettreport.com](https://www.corbettreport.com/) comments section.
+15. **NEW IN V0.3** a site search button has been added to the search box in the top right of the page. The **Search** button searches the site the usual way, while the **Site search** button will search the site in the provided external search engine. This search will include results from the [corbettreport.com](https://www.corbettreport.com/) comments section.
 
 ![images/site_search_button.png](images/site_search_button.png)
 
