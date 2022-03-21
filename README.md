@@ -81,18 +81,46 @@ By pressing `CTRL+SHIFT+V` I get this:
 
 **Note 2** - formatting can get a bit messy sometimes (just a tradeof when using fancier controls) and when in doubt, simply select the whole comment text and click the text formatting clear button (the last button on the toolbar).
 
-8. **NEW IN V0.2** everyone's favorite website at [corbettreport.com](https://www.corbettreport.com/) has now been reskined a bit in a very friendly fashion without implying anything about the current site look or feel. Example screenshot in the next step.
+8. *NEW IN V0.2* everyone's favorite website at [corbettreport.com](https://www.corbettreport.com/) has now been reskined a bit in a very friendly fashion without implying anything about the current site look or feel. Example screenshot in the next step.
 
-9. **NEW IN V0.2** everyone's favorite website (echo?) at [corbettreport.com](https://www.corbettreport.com/) has now been bestowed with a dark mode. Because tired eyes.
+9. *NEW IN V0.2* everyone's favorite website (echo?) at [corbettreport.com](https://www.corbettreport.com/) has now been bestowed with a dark mode. Because tired eyes.
 
 Here are the two new layouts combined. This would also be the recommended way to use these two options because I haven't tested them separately. At all :P But I like having options, so there it goes. *You are welcome* says I when your eyes say *thank you*.
 
 ![images/cr-ui-rich-text-2.png](images/cr-ui-redesign-dark-mode-v0.2.png)
 
-10. **NEW IN V0.2** a new feature is the *unread* comments button. By pressing the `Next` button, the page will magically scroll to the least *read* comment. The script does not, of course, know what one has read, but it just keeps ***track*** (as per disclaimer above) of the last comment that was loaded when an article has been accessed. By reloading the page, the script will rightly assume every comment has been read and will mark them as such.
+10. *NEW IN V0.2* a new feature is the *unread* comments button. By pressing the `Next` button, the page will magically scroll to the least *read* comment. The script does not, of course, know what one has read, but it just keeps ***track*** (as per disclaimer above) of the last comment that was loaded when an article has been accessed. By reloading the page, the script will rightly assume every comment has been read and will mark them as such.
 
 ![images/cr-ui-rich-text-2.png](images/cr-ui-toolbar-v0.2.png)
 
 **Note** - comment sort order buttons have now been moved to the toolbar on the top of the page.
 
-11. **NEW IN V0.2** the script should from this point onward automatically offer updates, from time to time, depending on Tampermonkey settings.
+11. *NEW IN V0.2* the script should from this point onward automatically offer updates, from time to time, depending on Tampermonkey settings.
+
+12. **NEW IN V0.3** this is more akin to a bug fix, the comment edit box now also uses the rich text control.
+
+![images/edit_box_rich_text.png](images/edit_box_rich_text.png)
+
+13. **NEW IN V0.3** to (far?) right of the article title, on the top of the page, now there will be a clickable IPFS URL for the same article.
+
+![images/ipfs_url.png](images/ipfs_url.png)
+
+**Note** - This URL might not exist, we are merely guessing that it exists. Thus the question mark. The URL will, in fact, be valid once the IPFS mirror of [corbettreport.com](https://www.corbettreport.com/) is updated.
+
+14. **NEW IN V0.3** an option to share comments from the [corbettreport.com](https://www.corbettreport.com/) comments section via email has been made available. Upon clicking the button an eml file will be created (some browsers might declare this file to be *unsafe*, use your judgement) that will open in many email clients as a new email that is ready to be sent toward unsuspecting recipients.
+
+![images/send_comment_via_email.png](images/send_comment_via_email.png)
+
+15. **NEW IN V0.3** a site search button has been added to the search box in the top right. The **Search** button searches the site the usual way, while the **Site search** button will search the site in the provided external search engine. This search will include results from the [corbettreport.com](https://www.corbettreport.com/) comments section.
+
+![images/site_search_button.png](images/site_search_button.png)
+
+I have provided by default [https://metager.org](https://metager.org) as the external search engine as this is what I'm using currently. If you wish to use something else, I propose editing the script directly as follows:
+
+![images/custom_search_engine.png](images/custom_search_engine.png)
+
+In the future I might provide search engine optins, but for the time being I found that to be outside of the scope of this excercise.
+
+**Note** the newsletter comments section will probably be off limits for web crawlers as those are the only articles that are behind a paywall of sorts.
+
+16. **NEW IN V0.3** various styling fixes and minor changes/improvements.
