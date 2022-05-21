@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CR UI Enhancer
 // @namespace    https://github.com/mkey/CorbettReportUIEnhancer/
-// @version      0.31
+// @version      0.32
 // @description  CorbettReport User interface enghancer script. Visit https://github.com/mkey/CorbettReportUIEnhancer/ for details.
 // @author       mkey
 // @homepage     https://github.com/mkey/
@@ -265,7 +265,7 @@
                         this.counter.value = count;
                     }
                     //
-                    this.textArea.value = this.quill.root.innerHTML.replace(regex_cl, '').replace(regex_nl, '\r\n').replace(regex_bq, '\r\n').trim();
+                    this.textArea.value = this.quill.root.innerHTML.replace(regex_cl, '').replace(regex_nl, '\r\n').replace(regex_bq, '\r\n').replace('&nbsp;','').trim();
                 }
             }
             //
