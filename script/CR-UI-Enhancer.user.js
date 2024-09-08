@@ -1,15 +1,13 @@
 // ==UserScript==
 // @name         CR UI Enhancer
 // @namespace    https://github.com/mkey/CorbettReportUIEnhancer/
-// @version      0.32
+// @version      0.4
 // @description  CorbettReport User interface enghancer script. Visit https://github.com/mkey/CorbettReportUIEnhancer/ for details.
 // @author       mkey
 // @homepage     https://github.com/mkey/
 // @updateURL    https://github.com/mkey/CorbettReportUIEnhancer/raw/main/script/CR-UI-Enhancer.user.js
 // @downloadURL  https://github.com/mkey/CorbettReportUIEnhancer/raw/main/script/CR-UI-Enhancer.user.js
-// @match        https://www.corbettreport.com
-// @match        https://www.corbettreport.com/*
-// @match        https://www.corbettreport.com/wp-admin/profile.php
+// @match        https://corbettreport.com/*
 // @resource     QUILLCSS https://cdn.quilljs.com/1.3.6/quill.snow.css
 // @grant        GM_getResourceText
 // @grant        GM_addStyle
@@ -27,7 +25,7 @@
     const SETTINGS = getSettings();
     const comment = document.getElementById('comment');
     const editbox = document.getElementsByClassName('sce-comment-text');
-    const profile = document.getElementById('profile-page');
+    const profile = document.getElementById('give_error_warning');
     //
     const SEARCH_ENGINE = 'https://metager.org/meta/meta.ger3?eingabe=';
     //
@@ -44,14 +42,15 @@
         //
         subscriptionSettings(document.getElementById('subscribe-reloaded'), settings.subscriptionSetting);
         //
+        richTextComment(cs, 'comment-div', 'commentlen', settings.richTextEditor);
         // wait for extra sce-comment-text to be removed
-        window.setTimeout(function() {
+        /*window.setTimeout(function() {
             richTextComment(cs, 'comment-div', 'commentlen', settings.richTextEditor);
             //console.log(eb[0].parentNode);
             for (let i = 0, i_max = eb.length; i < i_max; i++) {
                 richTextComment(eb[i], 'comment-div' + i, null, settings.richTextEditor);
             }
-        }, 5);
+        }, 5);*/
         //
         let list = document.getElementsByClassName('commentlist');
         if (!list){ return; }
@@ -114,15 +113,13 @@
         }
         //
         const autoSave = new autoSaveClass();
-        //
-        let displayName = document.getElementsByClassName('display-name');
-        if (!displayName){ return; }
-        displayName = displayName[0].textContent.trim();
-        //
         const comments = [];
         //
-        commentSortOrder(list, displayName, comments, settings.commentsSortOrderDefault);
-        //
+        let displayName = document.getElementsByClassName('logged-in-as');
+        if (displayName && displayName.length > 0){
+            displayName = displayName[0].textContent.trim().match(/Logged in as (.+)\. Edit.+/)[1];
+            commentSortOrder(list, displayName, comments, settings.commentsSortOrderDefault);
+        }
         // add IPFS URL to the article title
         addIpfsUrl();
         //
@@ -131,8 +128,9 @@
         //
         // correct the scroll offset issue that happens because of style changes happening
         // a bit late in the page loading process. For comment andchored URLs only
-        window.setTimeout(fixScroll, 1000);
+        //window.setTimeout(fixScroll, 1000);
         //
+        bionicReading(settings.readingAssistance);
         //
         function fixScroll() {
             //document.location = document.location;
@@ -186,23 +184,21 @@
                 }
             } else if (last_read < 0) { last_read = comments.length; }
             //
-            createToolbar(comments.length-last_read, document.getElementById('wp-admin-bar-top-secondary'));
+            createToolbar(comments.length-last_read, document.getElementById('et-main-area'));
             //
             //
             function createToolbar(count, ul1) {
                 let div = document.createElement('div');
+                div.className = 'cr_ui_utb';
                 let span = document.createElement('span');
                 span.textContent = 'Unread comments: ' + count;
                 div.appendChild(span);
                 //
-                let ul = document.createElement('ul');
-                let li = document.createElement('li');
-                li.textContent = 'Next';
-                li.title = 'Go to next unread comment';
-                li.addEventListener('click', goToNextUnread, false);
-                ul.appendChild(li);
-                //
-                div.appendChild(ul);
+                let btn = document.createElement('button');
+                btn.textContent = 'Next';
+                btn.title = 'Go to next unread comment';
+                btn.addEventListener('click', goToNextUnread, false);
+                div.appendChild(btn);
                 ul1.parentNode.insertBefore(div, ul1);
             }
             //
@@ -240,6 +236,11 @@
             box.style.padding = 0;
             box.parentNode.appendChild(div);
             //
+            div = document.createElement('div');
+            div.className = counterId;
+            div.innerHTML = '<span id=' + counterId + '>3000</span> characters remaining';
+            box.parentNode.appendChild(div);
+            //
             class Counter {
                 constructor(quill, options) {
                     this.CHAR_COUNT = 3000;
@@ -259,10 +260,11 @@
                 }
                 //
                 update() {
+                    /*console.log(this.counter, this.CHAR_COUNT, this.quill.getText().trim().length, this.counter.value);*/
                     if (this.counter !== null) {
                         let count = this.CHAR_COUNT - this.quill.getText().trim().length;
                         this.counter.style.backgroundColor = (count >= 0) ? '' : 'red';
-                        this.counter.value = count;
+                        this.counter.textContent = count;
                     }
                     //
                     this.textArea.value = this.quill.root.innerHTML.replace(regex_cl, '').replace(regex_nl, '\r\n').replace(regex_bq, '\r\n').replace('&nbsp;','').trim();
@@ -274,7 +276,8 @@
             let quill = new Quill('#' + boxId, {
                 theme: 'snow',
                 modules: {
-                    counter: { container: (counterId !== null) ? '#' + counterId : null },
+                    /*counter: { container: (counterId !== null) ? '#' + counterId : null },*/
+                    counter: { container: '#' + counterId },
                     toolbar: {
                         handlers: {
                             /*
@@ -301,24 +304,25 @@
         // comment sort order alteration
         function commentSortOrder(list, displayName, comments, setting) {
             //
+            let regex_date = /(\d+|am|pm)/g;
             let commentsSortOrder = {
                 default: null,
                 btns: []
             }
             //
-            createToolbar(document.getElementById('wp-admin-bar-top-secondary'), commentsSortOrder.btns);
+            createToolbar(document.getElementById('et-main-area'), commentsSortOrder.btns);
             //
             let li = list.getElementsByTagName('li'), file;
             //
             for (let i = 0, i_max = li.length; i < i_max; i++) {
                 // create the navigation toolbar
-                let cite = li[i].getElementsByTagName('cite')[0];
+                let cite = li[i].getElementsByClassName('fn')[0];
                 //cite.parentNode.appendChild(createToolbar());
                 //
                 let userName = cite.textContent.trim();
                 // calculate the creation date
-                let a = li[i].getElementsByClassName('comment-meta commentmetadata')[0].getElementsByTagName('a')[0];
-                let m = a.textContent.trim().match(/(\d+|am|pm)/g);//[ "01", "08", "2021", "4", "46", "pm" ]
+                let a = li[i].getElementsByClassName('comment_date')[0].getElementsByTagName('a')[0];
+                let m = a.textContent.trim().match(regex_date);//[ "01", "08", "2021", "4", "46", "pm" ]
                 //
                 let date = new Date(0);
                 date.setYear(Number(m[2]));
@@ -346,8 +350,9 @@
                 comment.ownThread = ((parentComment !== undefined && parentComment.ownThread === true) ? true : false) || comment.own;
                 // add "in reply to:"
                 if (parentComment !== undefined) {
-                    let span = cite.parentNode.getElementsByTagName('span')[0];
+                    let span = document.createElement('span');
                     span.innerHTML = 'replies to: <a href= ' + parentComment.URL + '>' + parentComment.userName +'</a>';
+                    cite.parentNode.appendChild(span);
                 }
                 //
                 CreateEmailButton(cite.parentNode);
@@ -407,7 +412,8 @@
                 while (a.tagName !== 'A'){ a = a.parentNode; }
                 //
                 let comment = a.parentNode.parentNode;
-                let URL = comment.getElementsByClassName('comment-meta commentmetadata')[0].getElementsByTagName('a')[0].href;
+                console.log(comment)
+                let URL = comment.getElementsByClassName('comment_date')[0].getElementsByTagName('a')[0].href;
                 //
                 let text = [];
                 text.push('Date: ' + new Date());
@@ -446,7 +452,7 @@
                     let btn = html.getElementsByClassName('send-email-button')[0];
                     btn.parentNode.removeChild(btn);
                     //
-                    btn = html.getElementsByClassName('reply')[0];
+                    btn = html.getElementsByClassName('reply-container')[0];
                     btn.parentNode.removeChild(btn);
                     //
                     return html.innerHTML.trim();
@@ -455,21 +461,20 @@
             //
             function createToolbar(ul1, btns) {
                 let div = document.createElement('div');
+                div.className = 'cr_ui_utb';
                 let span = document.createElement('span');
                 span.textContent = 'Comments sorting order';
                 div.appendChild(span);
                 //
-                let ul = document.createElement('ul');
-                ul.appendChild(createButton('Default', 'Default sort order', defaultSortOrder, btns));
-                ul.appendChild(createButton('Descending', 'Chronological sort order, descending', chronologicalSortOrderDesc, btns));
-                ul.appendChild(createButton('Ascending', 'Chronological sort order, ascending', chronologicalSortOrderAsc, btns));
-                ul.appendChild(createButton('Threads', 'View only replies to my comments', showOnlyOwnComments, btns));
+                div.appendChild(createButton('Default', 'Default sort order', defaultSortOrder, btns));
+                div.appendChild(createButton('Descending', 'Chronological sort order, descending', chronologicalSortOrderDesc, btns));
+                div.appendChild(createButton('Ascending', 'Chronological sort order, ascending', chronologicalSortOrderAsc, btns));
+                div.appendChild(createButton('Threads', 'View only replies to my comments', showOnlyOwnComments, btns));
                 //
-                div.appendChild(ul);
                 ul1.parentNode.insertBefore(div, ul1);
                 //
                 function createButton(name, title, fn, btns) {
-                    let b = document.createElement('li');
+                    let b = document.createElement('button');
                     b.textContent = name;
                     b.title = title;
                     b.addEventListener('click', fn, false);
@@ -562,7 +567,6 @@
             if (h1.length === 0){ return; }
             //
             h1 = h1[0];
-            let a = h1.getElementsByTagName('a')[0];
             //
             let s = document.createElement('span');
             s.textContent = ' [ ';
@@ -570,7 +574,7 @@
             //
             let a1 = document.createElement('a');
             a1.title = 'This artice/video might be availabe on IPFS, there\'s only one way to find out';
-            a1.href = a.href.replace('https://www.corbettreport.com/', 'https://ipfs.io/ipns/QmNqHuSVuufkBKK1LHtoUmKETobZriC1o5uoiXSoLX2i3K/');
+            a1.href = document.URL.replace('https://corbettreport.com/', 'https://ipfs.io/ipns/QmNqHuSVuufkBKK1LHtoUmKETobZriC1o5uoiXSoLX2i3K/');
             a1.textContent = 'IPFS';
             h1.appendChild(a1);
             //
@@ -578,9 +582,44 @@
             s.textContent = ' (?) ] ';
             h1.appendChild(s);
         }
+        //
+        function bionicReading(setting) {
+            if (setting !== 2) { return; }
+            //
+            let words = new RegExp(/(<em>)|(<\/?em>)|(<strong>)|(<\/strong>)|(<a href=".*" target="_blank" rel="nofollow noopener noreferrer">)|(<\/a>)|([a-z]+)|([\.,:'"\?\-\s]*)/gi);
+            let letters = new RegExp(/^[a-z]/gi);
+            let chars = new RegExp(/[a-z]/gi);
+            //
+            let p = document.getElementsByTagName('p');
+            //
+            for (let i = 0, i_max = p.length, t; i < i_max; i++) {
+                if (p[i].textContent.length < 2) { continue; }
+                //
+                t = p[i].innerHTML.match(words);
+                console.log(t);
+                //
+                for (let j = 0, j_max = t.length, w, len, to; j < j_max; j++) {
+                    w = t[j];
+                    len = w.length;
+                    if (len < 2 || w[0].match(letters) === null) { continue; } // 2 characters minimum and has to start with a letter
+                    //
+                    w = w.match(chars);
+                    if (len < 4) { to = 2; } // 1 charcter for string length up to 3
+                    else if (len < 6) { to = 3; } // 2 characters for string length up to 5
+                    else { to = 4; }
+                    //
+                    w.splice(0, 1, '<b>', w[0]);
+                    w.splice(to, 1, '</b>', w[to]);
+                    t[j] = w.join('');
+                    console.log(t[j]);
+                }
+                p[i].innerHTML = t.join('');
+            }
+        }
     }
     //
     function otherPages(profile, comment, settings) {
+        //console.log(profile, comment);
         if (profile !== null || comment !== null){ return; }
         //
         addStyles(settings, 1);
@@ -595,6 +634,7 @@
         //
         addStyles(SETTINGS.settings, 2);
         //
+        pp = document.getElementById('et-main-area');
         pp.appendChild(document.createElement('hr'));
         let frame = document.createElement('div');
         frame.className = 'cr_ui_so_ss';
@@ -602,7 +642,8 @@
         //
         const settings = SETTINGS.settings;
         const sortOrderOptions = ['Default (as is)', 'Chronological descending', 'Chronological ascending', 'Own comment threads only'];
-        const subscriptionOptions = ['Do Not Send Email Notifications.', 'Send Email Notification ONLY If Someone Replies To My Comment(s).', 'Send Email Notification Whenever A New Comment Is Posted.'];
+        const subscriptionOptions = ['Do Not Send Email Notifications.', 'Send Email Notification Whenever A New Comment Is Posted.', 'Send Email Notification ONLY If Someone Replies To My Comment(s).'];
+        const readingAssistanceOptions = ['None', 'OpenDyslexic Font', 'ByonicReader'];
         //
         // alter the comment sort order
         let commentSortOrderCheckbox = createCheckbox(frame, 'Alter the comment sort order', settings.commentsSortOrder);
@@ -620,6 +661,8 @@
         let darkModeCheckbox = createCheckbox(frame, 'Dark mode, easy on your eyes', settings.darkMode);
         // track unread
         let trackLastReadCheckbox = createCheckbox(frame, 'Track last read comment', settings.trackLastRead);
+        // reading assistance options
+        let readingAssistanceSelect = createSelect(frame, 'Reading assistance', readingAssistanceOptions, settings.readingAssistance);
         //
         createButton(frame, 'Save CR UI Enhancer settings', saveSettings);
         //
@@ -631,6 +674,7 @@
             settings.redesignPage = redesignPageCheckbox.checked;
             settings.darkMode = darkModeCheckbox.checked;
             settings.trackLastRead = trackLastReadCheckbox.checked;
+            settings.readingAssistance = readingAssistanceSelect.selectedIndex;
             //
             SETTINGS.save();
             e.target._value = e.target.value
@@ -639,10 +683,10 @@
         }
         //
         function createButton(frame, text, fn) {
-            let save = document.createElement('input');
-            save.className = 'button button-primary';
-            save.type = 'button';
-            save.value = text;
+            let save = document.createElement('button');
+            //save.className = 'et_pb_button';
+            //save.type = 'button';
+            save.textContent = text;
             frame.appendChild(save);
             save.addEventListener('click', fn, false);
         }
@@ -706,7 +750,7 @@
           2 - profile
         */
         //console.log(settings, page);
-        if (settings.redesignPage === true || settings.darkMode === true) {
+        if ((settings.redesignPage === true || settings.darkMode === true)) {
             let link = document.createElement('link');
             link.href = 'https://fonts.googleapis.com';
             link.rel = 'preconnect';
@@ -716,8 +760,13 @@
             link.rel = 'preconnect';
             link.crossorigin = true;
             document.head.appendChild(link);
+            // roboto or dyslexic font
             link = document.createElement('link');
-            link.href = 'https://fonts.googleapis.com/css2?family=Merienda:wght@400;700&family=Roboto:ital,wght@0,400;0,700;1,400;1,700&display=swap';
+            if (settings.readingAssistance !== 1) {
+                link.href = 'https://fonts.googleapis.com/css2?family=Merienda:wght@400;700&family=Roboto:ital,wght@0,400;0,700;1,400;1,700&display=swap';
+            } else {
+                link.href = 'https://fonts.cdnfonts.com/css/opendyslexic';
+            }
             link.rel = 'stylesheet';
             document.head.appendChild(link);
         }
@@ -725,13 +774,19 @@
         let s = [];
         //
         s.push('#searchform #submitbutton + input { font-weight: bold; font-size: 10pt; padding: 3px; cursor: pointer; }');
+        s.push('div.et_pb_search { width: 100%; }');
+        //s.push('div.et_pb_column_6_tb_header { width: 100%; }');
         //
         if (settings.darkMode === true) {
             // dark mode styling
             s.push('p::-moz-selection { color: black; background-color: #e1b240; }');
             s.push('p::selection { color: black; background-color: #e1b240; }');
             s.push('* { scrollbar-color: #202324 #454a4d; }');
-            s.push('html, body, #related, div#topnav, table#textEdit tr, table#textEdit strong, .followit--follow-form-container, .followit--follow-form-container .form-preview { background-color: #1e2021!important; color: #b2aca2; }');
+            //s.push('html, body, #related, div#topnav, table#textEdit tr, table#textEdit strong, .followit--follow-form-container, .followit--follow-form-container .form-preview { background-color: #1e2021!important; color: #b2aca2; }');
+            s.push('html, body, .et_pb_section, #post-sidebar, #wp-block-search__input-1, #wp-block-archives-2, .comment_postinfo span.fn, .comment_postinfo a.url, div.et_pb_section_0_tb_footer.et_pb_section, article.et_pb_post, .give_notice, .cr_ui_so_ss select { background-color: #1e2021!important; color: #b2aca2; }');
+            s.push('div > div.et_pb_section.et_pb_section_1_tb_body { background-image: linear-gradient(132deg,#000 0%,#6362f7 89%,#000 90%,#1e2021 100%)!important; }');
+            s.push('div > div.et_pb_section.et_pb_section_3_tb_body { background-image: linear-gradient(132deg,#000 0%,#ec2426 89%,#1e2021 90%,#1e2021 100%)!important; }');
+            s.push('div > div.et_pb_section.et_pb_section_5_tb_body { background-image: linear-gradient(132deg,#000 0%,#6362f7 89%,#1e2021 90%,#1e2021 100%)!important; }');
             //s.push('table#textEdit span { color: #b2aca2!important; }');
             s.push('#topnav { box-shadow: inset 0px 0px 10px #000; }');
             s.push('#topnav ul.clearfix > li.menu-item, #topnav ul.clearfix > li.menu-item > a { background-color: transparent; }');
@@ -739,7 +794,7 @@
             s.push('div#outer-wrap, div#wrap, div#header, div#page, h3.widgettitle span { background-color: #181a1b; /*color: #e8e6e3;*/ }');
             s.push('.comment-body { background-color: #1e2021; }');
             //s.push('.comment-body blockquote, .entry blockquote { background-color: #181a1b; box-shadow: inset 0px 0px 10px #000; border-radius: 0.3em; color: #938d82; font-family: cursive; }');
-            s.push('.comment-body blockquote, .entry blockquote { background-color: #181a1b; box-shadow: inset 0px 0px 10px #000; border-radius: 0.3em; color: #b5b1a9; font-family: Merienda, cursive; font-size: 0.9em; }');
+            s.push('.comment-body blockquote, .et_pb_text_inner blockquote { background-color: #181a1b; box-shadow: inset 0px 0px 10px #000; border-radius: 0.3em; color: #b5b1a9; font-family: Merienda, cursive; font-size: 0.9em; }');
             s.push('#topnav ul a, #topnav ul a:link, #topnav ul a:visited, #topnav ul a:hover, #topnav ul ul a:hover { background-color: #181a1b; color: #337dff; text-shadow: 0 1px 0 #111; }');
             s.push('.maincontent a, .maincontent a:link, .maincontent a:visited { color: #337dff; }');
             s.push('.button-submit { float: right; clear: both; }');
@@ -768,8 +823,20 @@
             // articles and other pages
             if (settings.redesignPage === true) {
                 // page redesign styling
+                s.push('.et_pb_search_0_tb_header { width: 100%!important; }'); // search box
+                s.push('.et_pb_gutters1 .et_pb_column_1_4, .et_pb_gutters1.et_pb_row .et_pb_column_1_4 { width: 30%!important; }');
+                // old stuff
                 s.push('body { padding-top: 1em; border-top: 0; font-family: Roboto, Helvetica, sans-serif; }');
-                s.push('#outer-wrap { max-width: 87em; padding: 0 1em; }');
+                //
+                if (settings.readingAssistance === 2) {
+                    s.push('p { font-family: sans-serif; font-size: 1.3em; line-height: 1.5; color: #d2dbde; }');
+                } else if (settings.readingAssistance == 1) {
+                    s.push('p { font-family: OpenDyslexic3, sans-serif; font-size: 0.9em; line-height: 1.5; color: #d2dbde; }');
+                } else {
+                    s.push('p { font-family: Roboto, sans-serif; font-size: 1em; line-height: 1.2; color: #d2dbde; }');
+                }
+                //
+                s.push('#outer-wrap { max-width: 82em; padding: 0 1em; }');
                 s.push('#contentleft { width: 68%; }');
                 s.push('#contentright { width: 30.5%; }');
                 s.push('#sidebar { padding-top: 7px; }');
@@ -789,7 +856,7 @@
                 s.push('#searchform > #submitbutton { margin: 0 0.25em; }');
                 //
                 // bump up the IPFS banner
-                document.getElementById('text-3').appendChild(document.getElementsByClassName('widget_text widget-wrap')[0]);
+                // document.getElementById('text-3').appendChild(document.getElementsByClassName('widget_text widget-wrap')[0]);
             }
             //
             if (page === 0) {
@@ -808,6 +875,9 @@
                     s.push('.sce-comment-delete { float:none!important; }');
                     s.push('.send-email-button { width: 1em; display: block; float: right; }');
                     s.push('.send-email-button:hover { opacity: 0.8; }');
+                    //
+                    s.push('.cr_ui_utb { display: inline-block; margin-right: 1.25em; }');
+                    s.push('.cr_ui_utb > button { margin-left: 0.75em; }');
                 }
                 //
                 if (settings.richTextEditor === true) {
@@ -817,12 +887,24 @@
                     s.push('.ql-container { max-height: 36em; overflow: auto; min-height: 18em; font-size: 1em; }');
                     s.push('.ql-editor { min-height: 18em; padding: 0.5em; }');
                     s.push('#comment { height: 0; opacity: 0; padding: 0; }');
+                    s.push('#comment + span { height: 0; opacity: 0; padding: 0; }');
+                    s.push('.commentlen { padding-top: 0.25em; }');
+                    s.push('#commentlen { padding: 0; margin: 0; border: 0; }');
+                }
+                //
+                if (settings.redesignPage === true) {
+                    s.push('.et_pb_row_0_tb_body { margin: 0 1%; }');
+                    s.push('.et_pb_row { width: 97%; }');
+                    s.push('@media (min-width: 981px) { .et_pb_gutters3 .et_pb_column { margin-right: 2%; } }');
+                    s.push('@media (min-width: 981px) { .et_pb_gutters3 .et_pb_column_3_4 { width: 76.5%; } }');
+                    s.push('ul.children > li.comment { margin-left: 1.5em; }');
+                    s.push('#comment-wrap li.comment.depth-5 article { padding-right: 110px!important; }');
                 }
             }
         } else {
             // profile page
-            s.push('.cr_ui_so_ss > div { padding: 0.5em 0 0.5em; margin: 1em 0; }');
-            s.push('.cr_ui_so_ss > input { width: 15em; }');
+            s.push('.cr_ui_so_ss > div { padding: 0.25em 1em 0em; }');
+            s.push('.cr_ui_so_ss > input { width: 15em; margin: 1em; }');
             s.push('.cr_ui_so_ss div div { display: inline-block; width: 15.6em; font-size: 14px; font-weight: 600; }');
             s.push('.cr_ui_so_ss div div select { max-width: none; }');
             s.push('.cr_ui_so_ss div div + div { width: 50em; }');
@@ -847,7 +929,8 @@
                     redesignPage: false,
                     darkMode: false,
                     fontSize: 0,
-                    trackLastRead: false
+                    trackLastRead: false,
+                    readingAssistance: 0
                 };
                 //
                 let settings = GM_getValue(this.path, null);
@@ -896,14 +979,17 @@
     //
     // add a button for external site search, opens in a new tab
     function addCommentSearch() {
-        let s = document.getElementById('searchform');
+        // let s = document.getElementById('searchform');
+        let s = document.getElementsByClassName('et_pb_searchform')[0];
+        s = s.getElementsByTagName('div')[0];
         let b = document.createElement('input');
+        b.className = 'et_pb_searchsubmit';
         b.type = 'button';
-        b.value = 'Site search';
+        b.value = 'Ext';
         b.title = 'Search for site content on an external search engine in a new tab';
         //
         b.addEventListener('click', () => {
-            window.open(encodeURI(SEARCH_ENGINE + 'site:corbettreport.com ' + document.getElementById('searchfield').value), '_blank');
+            window.open(encodeURI(SEARCH_ENGINE + 'site:corbettreport.com ' + document.getElementsByClassName('et_pb_s')[0].value), '_blank');
         }, false);
         //
         s.appendChild(b);
