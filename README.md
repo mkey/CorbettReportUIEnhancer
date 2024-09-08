@@ -7,6 +7,10 @@ This user script is written to help enhance the user's experience on the site [c
 - Quill rich text editor used under the hood [quilljs.com](https://quilljs.com/)
 - [James Corbett](https://infogalactic.com/info/James_Corbett_(journalist)) for [corbettreport.com](https://www.corbettreport.com/).
 
+#### 0.4 version release to fix the script post corbettreport.com template update
+
+The below instructions should still apply fairly well, even though the page layout as shown on screenshots will be different. The script still requires some polish, but it should be fairly usable.
+
 #### How to install
 
 If you already have a userscript browser addon installed, skip to step 3:
